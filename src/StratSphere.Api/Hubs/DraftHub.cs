@@ -24,7 +24,7 @@ public class DraftHub : Hub
         var groupName = GetDraftGroupName(draftId);
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         _logger.LogInformation("Client {ConnectionId} joined draft {DraftId}", Context.ConnectionId, draftId);
-        
+
         // Optionally send current draft state to the joining client
         // await Clients.Caller.SendAsync("DraftState", currentState);
     }

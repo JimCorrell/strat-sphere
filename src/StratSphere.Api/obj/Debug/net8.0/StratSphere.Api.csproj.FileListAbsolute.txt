@@ -143,3 +143,4 @@
 /Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Api/obj/Debug/net8.0/StratSphere.Api.pdb
 /Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Api/obj/Debug/net8.0/StratSphere.Api.genruntimeconfig.cache
 /Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Api/obj/Debug/net8.0/ref/StratSphere.Api.dll
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Api/bin/Debug/net8.0/StratSphere.Api.staticwebassets.runtime.json

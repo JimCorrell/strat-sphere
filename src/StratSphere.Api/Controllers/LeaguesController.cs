@@ -10,39 +10,134 @@ namespace StratSphere.Api.Controllers;
 [Route("api/[controller]")]
 public class LeaguesController : ControllerBase
 {
-    private readonly StratLeagueDbContext _context;
+    private readonly StratSphereDbContext _context;
     private readonly ILogger<LeaguesController> _logger;
 
-    public LeaguesController(StratLeagueDbContext context, ILogger<LeaguesController> logger)
+    public LeaguesController(StratSphereDbContext context, ILogger<LeaguesController> logger)
     {
         _context = context;
         _logger = logger;
     }
 
     /// <summary>
-    /// Get all leagues (optionally filtered by user membership).
+    /// Add a member to a league.
     /// </summary>
-    [HttpGet]
-    public async Task<ActionResult<List<LeagueSummaryResponse>>> GetLeagues([FromQuery] Guid? userId)
+    [HttpPost("{leagueId:guid}/members")]
+    public async Task<ActionResult<LeagueMemberResponse>> AddMember(Guid leagueId, [FromBody] AddMemberRequest request)
     {
-        var query = _context.Leagues.AsQueryable();
-
-        if (userId.HasValue)
+        var league = await _context.Leagues.FindAsync(leagueId);
+        if (league == null)
         {
-            query = query.Where(l => l.Members.Any(m => m.UserId == userId.Value && m.IsActive));
+            return NotFound("League not found");
         }
 
-        var leagues = await query
-            .Select(l => new LeagueSummaryResponse(
-                l.Id,
-                l.Name,
-                l.Slug,
-                l.Status,
-                l.Teams.Count
-            ))
-            .ToListAsync();
+        var user = await _context.Users.FindAsync(request.UserId);
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
 
-        return Ok(leagues);
+        // Check if already a member
+        var existingMembership = await _context.LeagueMembers
+            .AnyAsync(m => m.LeagueId == leagueId && m.UserId == request.UserId);
+
+        if (existingMembership)
+        {
+            return Conflict("User is already a member of this league");
+        }
+
+        var membership = new LeagueMember
+        {
+            LeagueId = leagueId,
+            UserId = request.UserId,
+            Role = (Core.Entities.LeagueRole)request.Role,
+            JoinedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        _context.LeagueMembers.Add(membership);
+        await _context.SaveChangesAsync();
+
+        var response = new LeagueMemberResponse(
+            membership.Id,
+            membership.UserId,
+            user.Username,
+            user.DisplayName,
+            (Shared.DTOs.LeagueRole)membership.Role,
+            membership.JoinedAt,
+            membership.IsActive
+        );
+
+        return Created($"/api/leagues/{leagueId}/members/{membership.Id}", response);
+    }
+
+    /// <summary>
+    /// Create a new league.
+    /// </summary>
+    [HttpPost]
+    public async Task<ActionResult<LeagueResponse>> CreateLeague(
+        [FromBody] CreateLeagueRequest request)
+    {
+        var creatorUserId = GetUserId();
+
+        // Generate slug from name
+        var slug = GenerateSlug(request.Name);
+
+        // Check if slug already exists
+        var existingSlug = await _context.Leagues.AnyAsync(l => l.Slug == slug);
+        if (existingSlug)
+        {
+            slug = $"{slug}-{Guid.NewGuid().ToString()[..8]}";
+        }
+
+        var league = new League
+        {
+            Name = request.Name,
+            Description = request.Description,
+            Slug = slug,
+            MaxTeams = request.MaxTeams,
+            RosterSize = request.RosterSize,
+            ActiveRosterSize = request.ActiveRosterSize,
+            UseDH = request.UseDH
+        };
+
+        _context.Leagues.Add(league);
+
+        // Add creator as commissioner
+        var membership = new LeagueMember
+        {
+            LeagueId = league.Id,
+            UserId = creatorUserId,
+            Role = Core.Entities.LeagueRole.Commissioner,
+            JoinedAt = DateTime.UtcNow,
+            IsActive = true
+        };
+
+        _context.LeagueMembers.Add(membership);
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Created league {LeagueId} '{LeagueName}' by user {UserId}",
+            league.Id, league.Name, creatorUserId);
+
+        var response = new LeagueResponse(
+            league.Id,
+            league.Name,
+            league.Slug,
+            league.Description,
+            league.Status,
+            league.CurrentSeason,
+            league.CurrentPhase,
+            league.MaxTeams,
+            league.RosterSize,
+            league.ActiveRosterSize,
+            league.UseDH,
+            0,
+            1,
+            league.CreatedAt
+        );
+
+        return CreatedAtAction(nameof(GetLeague), new { id = league.Id }, response);
     }
 
     /// <summary>
@@ -114,71 +209,52 @@ public class LeaguesController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new league.
+    /// Get all leagues (optionally filtered by user membership).
     /// </summary>
-    [HttpPost]
-    public async Task<ActionResult<LeagueResponse>> CreateLeague(
-        [FromBody] CreateLeagueRequest request,
-        [FromQuery] Guid creatorUserId) // TODO: Get from auth
+    [HttpGet]
+    public async Task<ActionResult<List<LeagueSummaryResponse>>> GetLeagues([FromQuery] Guid? userId)
     {
-        // Generate slug from name
-        var slug = GenerateSlug(request.Name);
-        
-        // Check if slug already exists
-        var existingSlug = await _context.Leagues.AnyAsync(l => l.Slug == slug);
-        if (existingSlug)
+        var query = _context.Leagues.AsQueryable();
+
+        if (userId.HasValue)
         {
-            slug = $"{slug}-{Guid.NewGuid().ToString()[..8]}";
+            query = query.Where(l => l.Members.Any(m => m.UserId == userId.Value && m.IsActive));
         }
 
-        var league = new League
-        {
-            Name = request.Name,
-            Description = request.Description,
-            Slug = slug,
-            MaxTeams = request.MaxTeams,
-            RosterSize = request.RosterSize,
-            ActiveRosterSize = request.ActiveRosterSize,
-            UseDH = request.UseDH
-        };
+        var leagues = await query
+            .Select(l => new LeagueSummaryResponse(
+                l.Id,
+                l.Name,
+                l.Slug,
+                l.Status,
+                l.Teams.Count
+            ))
+            .ToListAsync();
 
-        _context.Leagues.Add(league);
+        return Ok(leagues);
+    }
 
-        // Add creator as commissioner
-        var membership = new LeagueMember
-        {
-            LeagueId = league.Id,
-            UserId = creatorUserId,
-            Role = Core.Entities.LeagueRole.Commissioner,
-            JoinedAt = DateTime.UtcNow,
-            IsActive = true
-        };
+    /// <summary>
+    /// Get all members of a league.
+    /// </summary>
+    [HttpGet("{leagueId:guid}/members")]
+    public async Task<ActionResult<List<LeagueMemberResponse>>> GetMembers(Guid leagueId)
+    {
+        var members = await _context.LeagueMembers
+            .Include(m => m.User)
+            .Where(m => m.LeagueId == leagueId)
+            .Select(m => new LeagueMemberResponse(
+                m.Id,
+                m.UserId,
+                m.User.Username,
+                m.User.DisplayName,
+                (Shared.DTOs.LeagueRole)m.Role,
+                m.JoinedAt,
+                m.IsActive
+            ))
+            .ToListAsync();
 
-        _context.LeagueMembers.Add(membership);
-
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Created league {LeagueId} '{LeagueName}' by user {UserId}", 
-            league.Id, league.Name, creatorUserId);
-
-        var response = new LeagueResponse(
-            league.Id,
-            league.Name,
-            league.Slug,
-            league.Description,
-            league.Status,
-            league.CurrentSeason,
-            league.CurrentPhase,
-            league.MaxTeams,
-            league.RosterSize,
-            league.ActiveRosterSize,
-            league.UseDH,
-            0,
-            1,
-            league.CreatedAt
-        );
-
-        return CreatedAtAction(nameof(GetLeague), new { id = league.Id }, response);
+        return Ok(members);
     }
 
     /// <summary>
@@ -188,7 +264,7 @@ public class LeaguesController : ControllerBase
     public async Task<ActionResult<LeagueResponse>> UpdateLeague(Guid id, [FromBody] UpdateLeagueRequest request)
     {
         var league = await _context.Leagues.FindAsync(id);
-        
+
         if (league == null)
         {
             return NotFound();
@@ -229,81 +305,6 @@ public class LeaguesController : ControllerBase
         return await GetLeague(id);
     }
 
-    /// <summary>
-    /// Get all members of a league.
-    /// </summary>
-    [HttpGet("{leagueId:guid}/members")]
-    public async Task<ActionResult<List<LeagueMemberResponse>>> GetMembers(Guid leagueId)
-    {
-        var members = await _context.LeagueMembers
-            .Include(m => m.User)
-            .Where(m => m.LeagueId == leagueId)
-            .Select(m => new LeagueMemberResponse(
-                m.Id,
-                m.UserId,
-                m.User.Username,
-                m.User.DisplayName,
-                (Shared.DTOs.LeagueRole)m.Role,
-                m.JoinedAt,
-                m.IsActive
-            ))
-            .ToListAsync();
-
-        return Ok(members);
-    }
-
-    /// <summary>
-    /// Add a member to a league.
-    /// </summary>
-    [HttpPost("{leagueId:guid}/members")]
-    public async Task<ActionResult<LeagueMemberResponse>> AddMember(Guid leagueId, [FromBody] AddMemberRequest request)
-    {
-        var league = await _context.Leagues.FindAsync(leagueId);
-        if (league == null)
-        {
-            return NotFound("League not found");
-        }
-
-        var user = await _context.Users.FindAsync(request.UserId);
-        if (user == null)
-        {
-            return NotFound("User not found");
-        }
-
-        // Check if already a member
-        var existingMembership = await _context.LeagueMembers
-            .AnyAsync(m => m.LeagueId == leagueId && m.UserId == request.UserId);
-        
-        if (existingMembership)
-        {
-            return Conflict("User is already a member of this league");
-        }
-
-        var membership = new LeagueMember
-        {
-            LeagueId = leagueId,
-            UserId = request.UserId,
-            Role = (Core.Entities.LeagueRole)request.Role,
-            JoinedAt = DateTime.UtcNow,
-            IsActive = true
-        };
-
-        _context.LeagueMembers.Add(membership);
-        await _context.SaveChangesAsync();
-
-        var response = new LeagueMemberResponse(
-            membership.Id,
-            membership.UserId,
-            user.Username,
-            user.DisplayName,
-            (Shared.DTOs.LeagueRole)membership.Role,
-            membership.JoinedAt,
-            membership.IsActive
-        );
-
-        return Created($"/api/leagues/{leagueId}/members/{membership.Id}", response);
-    }
-
     private static string GenerateSlug(string name)
     {
         return name
@@ -311,5 +312,15 @@ public class LeaguesController : ControllerBase
             .Replace(" ", "-")
             .Replace("'", "")
             .Replace("\"", "");
+    }
+
+    private Guid GetUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            throw new UnauthorizedAccessException("User ID not found in token");
+        }
+        return userId;
     }
 }

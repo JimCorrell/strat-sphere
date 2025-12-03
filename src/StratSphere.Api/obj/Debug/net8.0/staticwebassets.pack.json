@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Api/wwwroot/css/app.css",
+      "PackagePath": "staticwebassets/css/app.css"
+    },
+    {
+      "Id": "/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Api/wwwroot/index.html",
+      "PackagePath": "staticwebassets/index.html"
+    },
+    {
+      "Id": "/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Api/wwwroot/js/api.js",
+      "PackagePath": "staticwebassets/js/api.js"
+    },
+    {
+      "Id": "/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Api/wwwroot/js/app.js",
+      "PackagePath": "staticwebassets/js/app.js"
+    },
+    {
+      "Id": "/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Api/wwwroot/js/auth.js",
+      "PackagePath": "staticwebassets/js/auth.js"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.StratSphere.Api.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.build.StratSphere.Api.props",
+      "PackagePath": "build\\StratSphere.Api.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.StratSphere.Api.props",
+      "PackagePath": "buildMultiTargeting\\StratSphere.Api.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.StratSphere.Api.props",
+      "PackagePath": "buildTransitive\\StratSphere.Api.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

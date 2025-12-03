@@ -12,12 +12,12 @@ namespace StratSphere.Api.Controllers;
 [Route("api/leagues/{leagueId:guid}/[controller]")]
 public class DraftsController : ControllerBase
 {
-    private readonly StratLeagueDbContext _context;
+    private readonly StratSphereDbContext _context;
     private readonly IDraftNotificationService _draftNotifications;
     private readonly ILogger<DraftsController> _logger;
 
     public DraftsController(
-        StratLeagueDbContext context,
+        StratSphereDbContext context,
         IDraftNotificationService draftNotifications,
         ILogger<DraftsController> logger)
     {
@@ -172,9 +172,18 @@ public class DraftsController : ControllerBase
     public async Task<ActionResult<DraftPickResponse>> MakePick(
         Guid leagueId,
         Guid draftId,
-        [FromBody] MakePickRequest request,
-        [FromQuery] Guid teamId) // TODO: Get from auth
+        [FromBody] MakePickRequest request)
     {
+        var userId = GetUserId();
+        var team = await _context.Teams.FirstOrDefaultAsync(t => t.LeagueId == leagueId && t.OwnerId == userId);
+
+        if (team == null)
+        {
+            return BadRequest("User does not own a team in this league");
+        }
+
+        var teamId = team.Id;
+
         var draft = await _context.Drafts
             .FirstOrDefaultAsync(d => d.LeagueId == leagueId && d.Id == draftId);
 
@@ -216,7 +225,7 @@ public class DraftsController : ControllerBase
 
         // Get player info for response
         var player = await _context.Players.FindAsync(request.PlayerId);
-        var team = await _context.Teams.FindAsync(teamId);
+        // Team is already fetched
 
         // Advance to next pick
         var nextPick = await _context.DraftPicks
@@ -336,13 +345,13 @@ public class DraftsController : ControllerBase
             }
 
             int positionInRound = 1;
-            foreach (var entry in roundOrder)
+            foreach (var teamId in roundOrder.Select(e => e.TeamId))
             {
                 var draftOrder = new DraftOrder
                 {
                     LeagueId = leagueId,
                     DraftId = draftId,
-                    TeamId = entry.TeamId,
+                    TeamId = teamId,
                     Round = round,
                     PickNumber = overallPick,
                     PositionInRound = positionInRound
@@ -353,7 +362,7 @@ public class DraftsController : ControllerBase
                 {
                     LeagueId = leagueId,
                     DraftId = draftId,
-                    TeamId = entry.TeamId,
+                    TeamId = teamId,
                     Round = round,
                     OverallPickNumber = overallPick
                 };
@@ -429,5 +438,15 @@ public class DraftsController : ControllerBase
         _logger.LogInformation("Started draft {DraftId}", draftId);
 
         return await GetDraft(leagueId, draftId);
+    }
+
+    private Guid GetUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            throw new UnauthorizedAccessException("User ID not found in token");
+        }
+        return userId;
     }
 }

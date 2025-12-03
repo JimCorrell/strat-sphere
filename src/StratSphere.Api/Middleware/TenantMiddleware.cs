@@ -21,7 +21,7 @@ public class TenantMiddleware
         Guid? leagueId = null;
 
         // 1. Route value (e.g., /api/leagues/{leagueId}/teams)
-        if (context.Request.RouteValues.TryGetValue("leagueId", out var routeLeagueId) 
+        if (context.Request.RouteValues.TryGetValue("leagueId", out var routeLeagueId)
             && Guid.TryParse(routeLeagueId?.ToString(), out var parsedRouteId))
         {
             leagueId = parsedRouteId;
