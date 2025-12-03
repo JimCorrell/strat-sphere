@@ -1,0 +1,16 @@
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/bin/Debug/net8.0/StratSphere.Core.deps.json
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/bin/Debug/net8.0/StratSphere.Core.dll
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/bin/Debug/net8.0/StratSphere.Core.pdb
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/StratSphere.Core.GeneratedMSBuildEditorConfig.editorconfig
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/StratSphere.Core.AssemblyInfoInputs.cache
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/StratSphere.Core.AssemblyInfo.cs
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/StratSphere.Core.csproj.CoreCompileInputs.cache
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/StratSphere.Core.sourcelink.json
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/StratSphere.Core.dll
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/refint/StratSphere.Core.dll
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/StratSphere.Core.pdb
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/ref/StratSphere.Core.dll
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/bin/Debug/net8.0/StratSphere.Shared.dll
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/bin/Debug/net8.0/StratSphere.Shared.pdb
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/StratSphere.Core.csproj.AssemblyReference.cache
+/Users/jimcorrell/Development/neho/StratSphere/src/StratSphere.Core/obj/Debug/net8.0/StratSph.379EB4B3.Up2Date

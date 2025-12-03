@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "myKwLQnmaTshsXHe6nUU0aFyVKOJ9vXByH2lQkPoF8U=",
+  "Source": "StratSphere.Api",
+  "BasePath": "_content/StratSphere.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/StratSphere.Api.props" />
+</Project>
